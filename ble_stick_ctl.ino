@@ -3,21 +3,17 @@
 #include <BLEUtils.h>
 #include <BLEServer.h>
 
-#include <Adafruit_NeoPixel.h>
+#include <FastLED.h>
 
 #define LED_PIN 12
 #define NUMPIXELS 8
 
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, LED_PIN, NEO_GRB+NEO_KHZ800);
-/* A few helpful color #defines... */
-#define COLOR_RED     0xFF0000
-#define COLOR_GREEN   0x00FF00
-#define COLOR_BLUE    0x0000FF
-#define COLOR_MAGENTA 0xFF00FF
-#define COLOR_YELLOW  0xFFFF00
-#define COLOR_CYAN    0x00FFFF
-#define COLOR_BLACK   0
-#define COLOR_WHITE   0xFFFFFF
+#define LED_TYPE WS2812
+#define COLOR_ORDER GRB
+
+CRGB leds[NUMPIXELS];
+
+
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -25,20 +21,6 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, LED_PIN, NEO_GRB+NEO_KHZ
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
-int red=0;
-int green=0;
-int blue=0;
-
-void fillAll( uint32_t color )
-{
-  int i;
-
-  for (i=0; i<NUMPIXELS; i++)
-  {
-    pixels.setPixelColor(i, color);
-  }
-  pixels.show();
-}
 
 class MyCallbacks: public BLECharacteristicCallbacks 
 {
@@ -52,9 +34,14 @@ class MyCallbacks: public BLECharacteristicCallbacks
       }
       else
       {     
+        int red;
+        int green;
+        int blue;
+        
         red = value[0];
         green = value[1];
         blue = value[2];
+        
         Serial.print("RGB: ");
         Serial.print(red);
         Serial.print(" ");
@@ -62,6 +49,11 @@ class MyCallbacks: public BLECharacteristicCallbacks
         Serial.print(" ");
         Serial.println(blue);  
 
+        leds[0].red = red;
+        leds[0].green = green;
+        leds[0].blue = blue;
+        FastLED.show();
+        
       }
 
       /*
@@ -86,19 +78,23 @@ void setup()
   int i;
   
   Serial.begin(115200);
+  
+  FastLED.addLeds<LED_TYPE, 12, COLOR_ORDER>(leds, NUMPIXELS).setCorrection( TypicalLEDStrip );
 
-  pixels.begin();
-
+  fill_solid(leds, NUMPIXELS, CRGB::Black);
+  FastLED.show();
+  
+  
   for (i=0;i<NUMPIXELS;i++)
   {
-    pixels.setPixelColor(i,COLOR_BLUE);
-    pixels.show();
+    leds[i]=CRGB::Blue;
+    FastLED.show();
     delay(200);
   }
   delay(1000);
 
-  fillAll(COLOR_BLACK);
-  
+  fill_solid(leds, NUMPIXELS, CRGB::Black);
+  FastLED.show();
 
   Serial.println("1- Download and install an BLE scanner app in your phone");
   Serial.println("2- Scan for BLE devices in the app");
@@ -127,16 +123,6 @@ void setup()
 }
 
 void loop() 
-{
-  if (red || green || blue)
-  {
-        Serial.print(red);
-        Serial.print(" ");
-        Serial.print(green);
-        Serial.print(" ");
-        Serial.println(blue); 
-  }
-  
-  pixels.setPixelColor(0, red, green, blue);
-  pixels.show();
+{  
+ 
 }
