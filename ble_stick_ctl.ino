@@ -20,7 +20,7 @@ CRGB leds[NUMPIXELS];
 
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
-
+#define CHAR_UUID2          "0e4e52c9-3278-49f2-8ed7-9581eb1a8559"
 
 class MyCallbacks: public BLECharacteristicCallbacks 
 {
@@ -55,20 +55,43 @@ class MyCallbacks: public BLECharacteristicCallbacks
         FastLED.show();
         
       }
+      
+    }
+};
 
-      /*
-      if (value.length() > 0) {
-        Serial.println("*******");
-        Serial.print("Length: ");
-        Serial.print(value.length());
-        Serial.print("  New value: ");
-        for (int i = 0; i < value.length(); i++)
-          Serial.print(value[i]);
+class MyCallbacks2: public BLECharacteristicCallbacks 
+{
+    void onWrite(BLECharacteristic *pCharacteristic) 
+    {
+      std::string value = pCharacteristic->getValue();
 
-        Serial.println();
-        Serial.println("*********");
+      if (value.length() != 3) 
+      {
+        Serial.println("Bad RGB Input");
       }
-      */
+      else
+      {     
+        int red;
+        int green;
+        int blue;
+        
+        red = value[0];
+        green = value[1];
+        blue = value[2];
+        
+        Serial.print("RGB: ");
+        Serial.print(red);
+        Serial.print(" ");
+        Serial.print(green);
+        Serial.print(" ");
+        Serial.println(blue);  
+
+        leds[1].red = red;
+        leds[1].green = green;
+        leds[1].blue = blue;
+        FastLED.show();
+        
+      }
       
     }
 };
@@ -96,11 +119,7 @@ void setup()
   fill_solid(leds, NUMPIXELS, CRGB::Black);
   FastLED.show();
 
-  Serial.println("1- Download and install an BLE scanner app in your phone");
-  Serial.println("2- Scan for BLE devices in the app");
-  Serial.println("3- Connect to MyESP32");
-  Serial.println("4- Go to CUSTOM CHARACTERISTIC in CUSTOM SERVICE and write something");
-  Serial.println("5- See the magic =)");
+  Serial.println("two characteristics");
 
   BLEDevice::init("ESP32 Stick");
   BLEServer *pServer = BLEDevice::createServer();
@@ -112,10 +131,22 @@ void setup()
                                          BLECharacteristic::PROPERTY_READ |
                                          BLECharacteristic::PROPERTY_WRITE
                                        );
-
+                                       
+  BLECharacteristic *pChar2 = pService->createCharacteristic(
+                                         CHAR_UUID2,
+                                         BLECharacteristic::PROPERTY_READ |
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       );
+                                       
   pCharacteristic->setCallbacks(new MyCallbacks());
+  pChar2->setCallbacks(new MyCallbacks2());
 
-  pCharacteristic->setValue("Hello World");
+  //pCharacteristic->setValue("hello world");
+  
+  uint8_t init_value[3]={0x00, 0x00, 0x00};
+  pCharacteristic->setValue(init_value, 3);
+  pChar2->setValue(init_value, 3);
+  
   pService->start();
 
   BLEAdvertising *pAdvertising = pServer->getAdvertising();
