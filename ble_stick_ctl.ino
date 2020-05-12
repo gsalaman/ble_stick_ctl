@@ -57,11 +57,33 @@ uint32_t display_delay_ms=100;
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
-#define CHAR_UUID2          "0e4e52c9-3278-49f2-8ed7-9581eb1a8559"
+#define SERVICE_UUID          "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+// Speed is a one byte characteristic. 0 is the slowest we can go, 255 the fastest
+#define SPEED_CHAR_UUID       "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
-class MyCallbacks: public BLECharacteristicCallbacks 
+// Eye and Background color are three byte RGB values.
+#define EYE_COLOR_CHAR_UUID  "0e4e52c9-3278-49f2-8ed7-9581eb1a8559"
+#define BACKGROUND_COLOR_CHAR_UUID  "a804d721-ed8f-4a34-82d2-86200391e060"
+
+class SpeedCB: public BLECharacteristicCallbacks 
+{
+    void onWrite(BLECharacteristic *pCharacteristic) 
+    {
+      std::string value = pCharacteristic->getValue();
+
+      if (value.length() != 1) 
+      {
+        Serial.println("Bad Speed Input");
+      }
+      else
+      {     
+        display_delay_ms = 10 + 4*value[0];
+      }
+      
+    }
+};
+
+class EyeColorCB: public BLECharacteristicCallbacks 
 {
     void onWrite(BLECharacteristic *pCharacteristic) 
     {
@@ -69,7 +91,7 @@ class MyCallbacks: public BLECharacteristicCallbacks
 
       if (value.length() != 3) 
       {
-        Serial.println("Bad RGB Input");
+        Serial.println("Bad RGB Input for head");
       }
       else
       {     
@@ -81,24 +103,23 @@ class MyCallbacks: public BLECharacteristicCallbacks
         green = value[1];
         blue = value[2];
         
-        Serial.print("RGB: ");
+        Serial.print("Eye color RGB: ");
         Serial.print(red);
         Serial.print(" ");
         Serial.print(green);
         Serial.print(" ");
         Serial.println(blue);  
 
-        leds[0].red = red;
-        leds[0].green = green;
-        leds[0].blue = blue;
-        FastLED.show();
+        eye_color.red = red;
+        eye_color.green = green;
+        eye_color.blue = blue;
         
       }
       
     }
 };
 
-class MyCallbacks2: public BLECharacteristicCallbacks 
+class BackgroundColorCB: public BLECharacteristicCallbacks 
 {
     void onWrite(BLECharacteristic *pCharacteristic) 
     {
@@ -106,7 +127,7 @@ class MyCallbacks2: public BLECharacteristicCallbacks
 
       if (value.length() != 3) 
       {
-        Serial.println("Bad RGB Input");
+        Serial.println("Bad RGB Input for background color");
       }
       else
       {     
@@ -118,23 +139,19 @@ class MyCallbacks2: public BLECharacteristicCallbacks
         green = value[1];
         blue = value[2];
         
-        Serial.print("RGB: ");
+        Serial.print("Background color RGB: ");
         Serial.print(red);
         Serial.print(" ");
         Serial.print(green);
         Serial.print(" ");
         Serial.println(blue);  
 
-        leds[1].red = red;
-        leds[1].green = green;
-        leds[1].blue = blue;
-        FastLED.show();
-        
-      }
-      
+        background_color.red = red;
+        background_color.green = green;
+        background_color.blue = blue;        
+      }     
     }
 };
-
 /* Fills the entire virtual window with a given color */
 void virtual_fill(CRGB color)
 {
@@ -293,33 +310,37 @@ void setup()
   fill_solid(leds, NUMPIXELS, CRGB::Black);
   FastLED.show();
 
-  Serial.println("two characteristics");
-
-  BLEDevice::init("ESP32 Stick");
+  BLEDevice::init("ESP32 Stick Cylon");
   BLEServer *pServer = BLEDevice::createServer();
 
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
-  BLECharacteristic *pCharacteristic = pService->createCharacteristic(
-                                         CHARACTERISTIC_UUID,
+  BLECharacteristic *pSpeedChar = pService->createCharacteristic(
+                                         SPEED_CHAR_UUID,
                                          BLECharacteristic::PROPERTY_READ |
                                          BLECharacteristic::PROPERTY_WRITE
                                        );
                                        
-  BLECharacteristic *pChar2 = pService->createCharacteristic(
-                                         CHAR_UUID2,
+  BLECharacteristic *pEyeColorChar = pService->createCharacteristic(
+                                         EYE_COLOR_CHAR_UUID,
                                          BLECharacteristic::PROPERTY_READ |
                                          BLECharacteristic::PROPERTY_WRITE
                                        );
                                        
-  pCharacteristic->setCallbacks(new MyCallbacks());
-  pChar2->setCallbacks(new MyCallbacks2());
+  BLECharacteristic *pBackgroundColorChar = pService->createCharacteristic(
+                                         BACKGROUND_COLOR_CHAR_UUID,
+                                         BLECharacteristic::PROPERTY_READ |
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       );
+                                       
+  pSpeedChar->setCallbacks(new SpeedCB());
+  /* ADD EYE AND BACKGROUND */
 
-  //pCharacteristic->setValue("hello world");
-  
+
+  /* FIX ME!!!*/
   uint8_t init_value[3]={0x00, 0x00, 0x00};
-  pCharacteristic->setValue(init_value, 3);
-  pChar2->setValue(init_value, 3);
+  //pCharacteristic->setValue(init_value, 3);
+  //pChar2->setValue(init_value, 3);
   
   pService->start();
 
