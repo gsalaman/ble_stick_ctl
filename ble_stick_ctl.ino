@@ -49,10 +49,11 @@ dir_type current_eye_dir=DIR_RIGHT;
 CRGB eye_color=CRGB::Red;
 CRGB background_color=CRGB::Blue;
 
+#define START_DELAY_MS    100;
 #define DISPLAY_MIN_DELAY 10
 #define DISPLAY_MAX_DELAY 1000
 
-uint32_t display_delay_ms=100;
+uint32_t display_delay_ms=START_DELAY_MS;
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -77,7 +78,7 @@ class SpeedCB: public BLECharacteristicCallbacks
       }
       else
       {     
-        display_delay_ms = 10 + 4*value[0];
+        display_delay_ms = value[0];
       }
       
     }
@@ -290,6 +291,7 @@ void update_display(void)
 void setup() 
 {
   int i;
+  uint8_t init_value[3];
   
   Serial.begin(115200);
   
@@ -334,13 +336,20 @@ void setup()
                                        );
                                        
   pSpeedChar->setCallbacks(new SpeedCB());
-  /* ADD EYE AND BACKGROUND */
+  init_value[0]=START_DELAY_MS;
+  pSpeedChar->setValue(init_value, 1);
 
+  pEyeColorChar->setCallbacks(new EyeColorCB());
+  init_value[0]=0xFF;
+  init_value[1]=0;
+  init_value[2]=0;
+  pEyeColorChar->setValue(init_value, 3);
 
-  /* FIX ME!!!*/
-  uint8_t init_value[3]={0x00, 0x00, 0x00};
-  //pCharacteristic->setValue(init_value, 3);
-  //pChar2->setValue(init_value, 3);
+  pBackgroundColorChar->setCallbacks(new BackgroundColorCB());
+  init_value[0]=0;
+  init_value[1]=0;
+  init_value[2]=0xFF;
+  pBackgroundColorChar->setValue(init_value, 3);
   
   pService->start();
 
