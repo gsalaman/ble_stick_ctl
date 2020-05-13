@@ -68,6 +68,7 @@ I then exported this project and put it up on google drive...which lets me insta
 
 ## Current Investigations
 In no particular order:
+* Instead of using a phone app, use another ESP32 as a client.
 * Disconnects are a little flaky...the app sometimes stays connected when I don't want it to, which means no one else can connect to the ESP32.  I want to fix that bit.
 * Look at "characteristic descriptors".  What are they?  See reference in the BLE_server_multiconnect example.
 * Can I change the icon from exported App inventor files?
