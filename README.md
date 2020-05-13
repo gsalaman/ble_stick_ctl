@@ -28,5 +28,14 @@ For this project, I'm going to make a simple Service that contains 3 Characteris
 
 Note that the Bluetooth SIG defines "Profiles" as well...these are industry-standard collections of services.  For example, there is a "heart rate monitor" profile that describes which services should be supported in an industry standard heart rate monitor.  Check out https://www.bluetooth.com/specifications/gatt for more info.
 
+## Implementation
+Each Service and Characteristic needs a UUID.  For the industry standard ones, you reference the official specifications, but my project here is "user defined".  There's a website that lets you generate UUIDs (https://www.uuidgenerator.net/)
+
+The arduino BLE libraries let you specify Callbacks for each service and characteristic.  I've currently got a "connect and disconnect" callback for the server, and then "Write" callbacks for the characteristcs that set the appropriate cylon variables.
+
+In setup, I'm:
+* Initializing my device (which sets it's name for discovery)
+* Setting up the Service (along with it's callbacks)
+* Setting up the Characteristics and attaching them to the service.
 
 
