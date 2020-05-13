@@ -49,3 +49,27 @@ Click the "scan" button, and look for your device in the list.
 Click on that device, and then click connect.  You'll see the UUID for it's service listed on the bottom left.  Click on that, and you'll see the three UUIDs for the characteristics.  
 
 This isn't very user-friendly, as the UUIDs are pretty cryptic...but then you can write bytes to the characteristics and see the changes take effect on the esp32.  The serial monitor will also give some insight into how the device is behaving.
+
+## Next step:  Phone App control
+There are several app-building sites out there...I chose MIT's App inventor.  I followed this guide for getting the enviornment set up:
+https://appinventor.mit.edu/explore/ai2/setup-device-wifi
+
+The cool thing here is that you can use your phone for live testing.  It's got a gui-painter for the design and it's blocks based for the coding.
+
+I then installed the BLE plugin and did the scan app as mentioned here:
+http://iot.appinventor.mit.edu/assets/tutorials/MIT_App_Inventor_Basic_Connection.pdf
+
+This was a good "first app" for me...and then I expanded it to first make a slider to send speed, then two sliders for eye-color and background-color.
+
+Note I'm building the colors as a "hue" value (from 0 to 767), but then creating an RGB value out of that hue value.
+0 is red, 255 is blue, 511 is green.
+
+I then exported this project and put it up on google drive...which lets me install it stand-alone on my phone (or anyone elses!!!)
+
+## Current Investigations
+In no particular order:
+* Disconnects are a little flaky...the app sometimes stays connected when I don't want it to, which means no one else can connect to the ESP32.  I want to fix that bit.
+* Look at "characteristic descriptors".  What are they?  See reference in the BLE_server_multiconnect example.
+* Can I change the icon from exported App inventor files?
+* Investigate the "advertisements".  Is that a way to do "pings" for the trainer project?
+* Look at using either Thunkable or Cordova instead of MIT app inventor...might give IOS support.  Would be a good "pepsi challenge.
