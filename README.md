@@ -38,4 +38,14 @@ In setup, I'm:
 * Setting up the Service (along with it's callbacks)
 * Setting up the Characteristics and attaching them to the service.
 
+I'm processing the "speed" characteristic as a single byte.
 
+The eye and background color I'm processing as three bytes:  0-255 for R, G, and B.
+
+## Rough Functionality Test
+I started test by installing a BLE scanner app on my mac.  There are loads of them for phones as well, but I used BlueSee.
+
+Click the "scan" button, and look for your device in the list.  
+Click on that device, and then click connect.  You'll see the UUID for it's service listed on the bottom left.  Click on that, and you'll see the three UUIDs for the characteristics.  
+
+This isn't very user-friendly, as the UUIDs are pretty cryptic...but then you can write bytes to the characteristics and see the changes take effect on the esp32.  The serial monitor will also give some insight into how the device is behaving.
