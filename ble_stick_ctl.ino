@@ -66,6 +66,19 @@ uint32_t display_delay_ms=START_DELAY_MS;
 #define EYE_COLOR_CHAR_UUID  "0e4e52c9-3278-49f2-8ed7-9581eb1a8559"
 #define BACKGROUND_COLOR_CHAR_UUID  "a804d721-ed8f-4a34-82d2-86200391e060"
 
+class MyServerCallbacks: public BLEServerCallbacks 
+{
+    void onConnect(BLEServer* pServer) 
+    {
+      Serial.println("Device Connected");
+    };
+
+    void onDisconnect(BLEServer* pServer) 
+    {
+      Serial.println("Device Disconnected");
+    }
+};
+
 class SpeedCB: public BLECharacteristicCallbacks 
 {
     void onWrite(BLECharacteristic *pCharacteristic) 
@@ -314,6 +327,7 @@ void setup()
 
   BLEDevice::init("ESP32 Stick Cylon");
   BLEServer *pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
 
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
