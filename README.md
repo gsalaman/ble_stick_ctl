@@ -66,6 +66,11 @@ Note I'm building the colors as a "hue" value (from 0 to 767), but then creating
 
 I then exported this project and put it up on google drive...which lets me install it stand-alone on my phone (or anyone elses!!!)
 
+## Thunkable
+MIT App Inventor is cool, but it only supports Android.  Thunkable is another block-based enviornment, and support both Android and Apple.
+
+Thunkable's API for the BLE plugin isn't as robust as MIT's...it looks like I'm going to need to send strings rather than bytes.  In order to preserve backwards compatability, I'm going to make 3 new characteristics instead of re-doing the existing ones.  
+
 ## Current Investigations
 In no particular order:
 * Instead of using a phone app, use another ESP32 as a client.
@@ -73,4 +78,4 @@ In no particular order:
 * Look at "characteristic descriptors".  What are they?  See reference in the BLE_server_multiconnect example.
 * Can I change the icon from exported App inventor files?
 * Investigate the "advertisements".  Is that a way to do "pings" for the trainer project?
-* Look at using either Thunkable or Cordova instead of MIT app inventor...might give IOS support.  Would be a good "pepsi challenge.
+* Look at using either Thunkable or Cordova instead of MIT app inventor...might give IOS support.  Would be a good "pepsi challenge".
