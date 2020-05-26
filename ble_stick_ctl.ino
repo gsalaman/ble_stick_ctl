@@ -71,71 +71,86 @@ uint32_t display_delay_ms=START_DELAY_MS;
 #define EYE_COLOR_STR_UUID          "a1023593-a291-4bf8-95ec-83372b801c37"
 #define BACKGROUND_COLOR_STR_UUID   "23220e48-526f-4ca0-92e4-7b3d47575229"
 
-/* this function takes a hex character digit and returns 0 through 16.  
- * If it isn't a proper hex digit, we'll return -1.
+/* A crgb string is three integers, separated by commas. 
+ *  Note:  not range checking the ints at this point...
  */
-int a_to_hex(char hex_digit)
-{
-  /* is it a number? */
-  if ((hex_digit >= '0' && hex_digit <= '9'))
-  {
-    return (hex_digit - '0');
-  }
-
-  /* lower-case hex digit? */
-  if ((hex_digit >= 'a' && hex_digit <= 'f'))
-  {
-    return ( hex_digit - 'a' + 10 );
-  }
-
-  /* upper-case hex digit? */
-  if ((hex_digit >= 'A' && hex_digit <= 'F'))
-  {
-    return ( hex_digit - 'A' + 10 );
-  }
-
-  /* if we got here, we didn't parse a valid hex digit */
-  return (-1);
-}
-
-/* We're going to define the RGB string to be 6 hex digits.  */
 int parse_crgb(const char *rgb_string, CRGB *crgb)
 {
-  int  temp_byte;
-  CRGB temp_crgb;
+  CRGB temp_crgb=CRGB::Black;
+  int digit;
+  bool parsing=true;
 
   if (crgb == NULL) return(-1);
-  
-  /* first two hex digits are the red value */
-  temp_byte = a_to_hex(*rgb_string);
-  if (temp_byte == -1)  return(-1);
-  temp_crgb.red = temp_byte * 16;
-  rgb_string++;
-  temp_byte = a_to_hex(*rgb_string);
-  if (temp_byte == -1)  return(-1);
-  temp_crgb.red = temp_crgb.red + temp_byte;
-  rgb_string++;
-  
-  /* next two hex digits are green */
-  temp_byte = a_to_hex(*rgb_string);
-  if (temp_byte == -1)  return(-1);
-  temp_crgb.green = temp_byte * 16;
-  rgb_string++;
-  temp_byte = a_to_hex(*rgb_string);
-  if (temp_byte == -1)  return(-1);
-  temp_crgb.green = temp_crgb.green + temp_byte;
-  rgb_string++;
-  
-  /* last two are blue */
-  temp_byte = a_to_hex(*rgb_string);
-  if (temp_byte == -1)  return(-1);
-  temp_crgb.blue = temp_byte * 16;
-  rgb_string++;
-  temp_byte = a_to_hex(*rgb_string);
-  if (temp_byte == -1)  return(-1);
-  temp_crgb.blue = temp_crgb.blue + temp_byte;
-  rgb_string++;
+  if (rgb_string == NULL) return(-2);
 
+  // parse r digits until we hit either a null, an invalid digit, or a comma.
+  while (parsing)
+  {
+    if ((*rgb_string >= '0') && (*rgb_string <= '9')) 
+    {
+      temp_crgb.red = temp_crgb.red * 10;
+      temp_crgb.red = temp_crgb.red + (*rgb_string) - '0';
+    }
+    else if (*rgb_string == ',')
+    {
+      // move on to the g value.
+      parsing = false;
+    }
+    else
+    {
+      // invalid char.  
+      return(-1);
+    }
+
+    rgb_string++;
+  }
+
+  // now do the same for g
+  parsing = true;
+  while (parsing)
+  {
+    if ((*rgb_string >= '0') && (*rgb_string <= '9')) 
+    {
+      temp_crgb.green = temp_crgb.green * 10;
+      temp_crgb.green = temp_crgb.green + (*rgb_string) - '0';
+    }
+    else if (*rgb_string == ',')
+    {
+      // move on to the b value.
+      parsing = false;
+    }
+    else
+    {
+      // invalid char.  
+      return(-1);
+    }
+
+    rgb_string++;
+  }
+
+  // finally, grab the b.  We'll be done when we hit a "null".  
+  parsing = true;
+  while (parsing)
+  {
+    if ((*rgb_string >= '0') && (*rgb_string <= '9')) 
+    {
+      temp_crgb.blue = temp_crgb.blue * 10;
+      temp_crgb.blue = temp_crgb.blue + (*rgb_string) - '0';
+    }
+    else if (*rgb_string == NULL)
+    {
+      // done...move on to the final copy.
+      parsing = false;
+    }
+    else
+    {
+      // invalid char.  
+      return(-1);
+    }
+
+    rgb_string++;
+  }
+  
   *crgb = temp_crgb;
 
   return(0);
@@ -273,47 +288,36 @@ class EyeStrCB: public BLECharacteristicCallbacks
     {
       std::string value = pCharacteristic->getValue();
 
-      if (value.length() != 6) 
-      {
-        Serial.println("Bad RGB Input for head");
-      }
-      else
-      {     
-        int ret_val;
+      Serial.print("Set eye: ");
+      Serial.println(value.c_str());
 
-        ret_val = parse_crgb(value.c_str(), &eye_color);
-        if (ret_val)
-        {
-          Serial.println("error parsing head CRGB string");
-        }
-
-      }
+      int ret_val = parse_crgb(value.c_str(), &eye_color);
       
+   
+      if (ret_val)
+      {
+          Serial.print("error parsing head CRGB string:");
+          Serial.println(ret_val);
+      }
     }
 };
 
 class BackgroundStrCB: public BLECharacteristicCallbacks 
 {
-    void onWrite(BLECharacteristic *pCharacteristic) 
+        void onWrite(BLECharacteristic *pCharacteristic) 
     {
       std::string value = pCharacteristic->getValue();
 
-      if (value.length() != 6) 
-      {
-        Serial.println("Bad RGB Input for Background");
-      }
-      else
-      {     
-        int ret_val;
+      Serial.print("Set Background: ");
+      Serial.println(value.c_str());
 
-        ret_val = parse_crgb(value.c_str(), &background_color);
-        if (ret_val)
-        {
-          Serial.println("error parsing Background CRGB string");
-        }
-
-      }
+      int ret_val = parse_crgb(value.c_str(), &background_color);
       
+      if (ret_val)
+      {
+          Serial.print("error parsing background CRGB string:");
+          Serial.println(ret_val);
+      }
     }
 };
 
@@ -524,8 +528,11 @@ void setup()
   pSpeedChar->setValue(init_value, 1);
 
   pSpeedStrChar->setCallbacks(new SpeedStrCB());
-  //pSpeedStrChar->setValue("10");
-
+  BLEDescriptor *pSpeedStrDescriptor = new BLEDescriptor((uint16_t) 0x02901);
+  pSpeedStrDescriptor->setValue("This space for rent");
+  pSpeedStrChar->addDescriptor(pSpeedStrDescriptor);
+  
+  
   pEyeColorChar->setCallbacks(new EyeColorCB());
   init_value[0]=0xFF;
   init_value[1]=0;
