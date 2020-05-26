@@ -72,6 +72,7 @@ MIT App Inventor is cool, but it only supports Android.  Thunkable is another bl
 Thunkable doesn't feel as solid as MIT App Inventor.  Examples:
 * The API for the BLE plugin isn't as robust as MIT's...it looks like I'm going to need to send strings rather than bytes.  In order to preserve backwards compatability, I'm going to make 3 new characteristics instead of re-doing the existing ones. 
 * When typing in numbers in the gui-builder, the window will change focus after just ONE number...meaning that you just changed something unintentionally somewhere else.
+* It's tricky to see when live test updates actually go out to the phone.  I've solved this by putting a "version" label at the bottom of the screen.
 
 
 ## Current Investigations
