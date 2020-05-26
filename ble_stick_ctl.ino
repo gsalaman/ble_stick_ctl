@@ -66,6 +66,81 @@ uint32_t display_delay_ms=START_DELAY_MS;
 #define EYE_COLOR_CHAR_UUID  "0e4e52c9-3278-49f2-8ed7-9581eb1a8559"
 #define BACKGROUND_COLOR_CHAR_UUID  "a804d721-ed8f-4a34-82d2-86200391e060"
 
+// String-based versions of the Speed, Eye Color and Background Color
+#define SPEED_STR_UUID              "ab766aa6-771b-49e7-a1cf-f57c16d1635c"
+#define EYE_COLOR_STR_UUID          "a1023593-a291-4bf8-95ec-83372b801c37"
+#define BACKGROUND_COLOR_STR_UUID   "23220e48-526f-4ca0-92e4-7b3d47575229"
+
+/* this function takes a hex character digit and returns 0 through 16.  
+ * If it isn't a proper hex digit, we'll return -1.
+ */
+int a_to_hex(char hex_digit)
+{
+  /* is it a number? */
+  if ((hex_digit >= '0' && hex_digit <= '9'))
+  {
+    return (hex_digit - '0');
+  }
+
+  /* lower-case hex digit? */
+  if ((hex_digit >= 'a' && hex_digit <= 'f'))
+  {
+    return ( hex_digit - 'a' + 10 );
+  }
+
+  /* upper-case hex digit? */
+  if ((hex_digit >= 'A' && hex_digit <= 'F'))
+  {
+    return ( hex_digit - 'A' + 10 );
+  }
+
+  /* if we got here, we didn't parse a valid hex digit */
+  return (-1);
+}
+
+/* We're going to define the RGB string to be 6 hex digits.  */
+int parse_crgb(const char *rgb_string, CRGB *crgb)
+{
+  int  temp_byte;
+  CRGB temp_crgb;
+
+  if (crgb == NULL) return(-1);
+  
+  /* first two hex digits are the red value */
+  temp_byte = a_to_hex(*rgb_string);
+  if (temp_byte == -1)  return(-1);
+  temp_crgb.red = temp_byte * 16;
+  rgb_string++;
+  temp_byte = a_to_hex(*rgb_string);
+  if (temp_byte == -1)  return(-1);
+  temp_crgb.red = temp_crgb.red + temp_byte;
+  rgb_string++;
+  
+  /* next two hex digits are green */
+  temp_byte = a_to_hex(*rgb_string);
+  if (temp_byte == -1)  return(-1);
+  temp_crgb.green = temp_byte * 16;
+  rgb_string++;
+  temp_byte = a_to_hex(*rgb_string);
+  if (temp_byte == -1)  return(-1);
+  temp_crgb.green = temp_crgb.green + temp_byte;
+  rgb_string++;
+  
+  /* last two are blue */
+  temp_byte = a_to_hex(*rgb_string);
+  if (temp_byte == -1)  return(-1);
+  temp_crgb.blue = temp_byte * 16;
+  rgb_string++;
+  temp_byte = a_to_hex(*rgb_string);
+  if (temp_byte == -1)  return(-1);
+  temp_crgb.blue = temp_crgb.blue + temp_byte;
+  rgb_string++;
+
+  *crgb = temp_crgb;
+
+  return(0);
+}
+
 class MyServerCallbacks: public BLEServerCallbacks 
 {
     void onConnect(BLEServer* pServer) 
@@ -166,6 +241,83 @@ class BackgroundColorCB: public BLECharacteristicCallbacks
       }     
     }
 };
+
+class SpeedStrCB: public BLECharacteristicCallbacks 
+{
+    void onWrite(BLECharacteristic *pCharacteristic) 
+    {
+      
+      std::string value = pCharacteristic->getValue();
+      int delay_ms;
+
+      delay_ms = atoi( value.c_str() );
+      
+      if (delay_ms == 0)
+      {
+        Serial.println("Bad Speed Input");
+      }
+      else
+      {
+        Serial.print("Speed: ");
+        Serial.println(delay_ms);
+             
+        display_delay_ms = delay_ms;
+      }
+      
+    }
+};
+
+class EyeStrCB: public BLECharacteristicCallbacks 
+{
+    void onWrite(BLECharacteristic *pCharacteristic) 
+    {
+      std::string value = pCharacteristic->getValue();
+
+      if (value.length() != 6) 
+      {
+        Serial.println("Bad RGB Input for head");
+      }
+      else
+      {     
+        int ret_val;
+
+        ret_val = parse_crgb(value.c_str(), &eye_color);
+        if (ret_val)
+        {
+          Serial.println("error parsing head CRGB string");
+        }
+
+      }
+      
+    }
+};
+
+class BackgroundStrCB: public BLECharacteristicCallbacks 
+{
+    void onWrite(BLECharacteristic *pCharacteristic) 
+    {
+      std::string value = pCharacteristic->getValue();
+
+      if (value.length() != 6) 
+      {
+        Serial.println("Bad RGB Input for Background");
+      }
+      else
+      {     
+        int ret_val;
+
+        ret_val = parse_crgb(value.c_str(), &background_color);
+        if (ret_val)
+        {
+          Serial.println("error parsing Background CRGB string");
+        }
+
+      }
+      
+    }
+};
+
+
 /* Fills the entire virtual window with a given color */
 void virtual_fill(CRGB color)
 {
@@ -348,10 +500,31 @@ void setup()
                                          BLECharacteristic::PROPERTY_READ |
                                          BLECharacteristic::PROPERTY_WRITE
                                        );
+
+   BLECharacteristic *pSpeedStrChar = pService->createCharacteristic(
+                                         SPEED_STR_UUID,
+                                         BLECharacteristic::PROPERTY_READ |
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       );
+                                                                           
+   BLECharacteristic *pEyeStrChar = pService->createCharacteristic(
+                                         EYE_COLOR_STR_UUID,
+                                         BLECharacteristic::PROPERTY_READ |
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       ); 
                                        
+   BLECharacteristic *pBackgroundStrChar = pService->createCharacteristic(
+                                         BACKGROUND_COLOR_STR_UUID,
+                                         BLECharacteristic::PROPERTY_READ |
+                                         BLECharacteristic::PROPERTY_WRITE
+                                       );   
+                                                                                                                 
   pSpeedChar->setCallbacks(new SpeedCB());
   init_value[0]=START_DELAY_MS;
   pSpeedChar->setValue(init_value, 1);
+
+  pSpeedStrChar->setCallbacks(new SpeedStrCB());
+  //pSpeedStrChar->setValue("10");
 
   pEyeColorChar->setCallbacks(new EyeColorCB());
   init_value[0]=0xFF;
@@ -359,11 +532,15 @@ void setup()
   init_value[2]=0;
   pEyeColorChar->setValue(init_value, 3);
 
+  pEyeStrChar->setCallbacks(new EyeStrCB());
+
   pBackgroundColorChar->setCallbacks(new BackgroundColorCB());
   init_value[0]=0;
   init_value[1]=0;
   init_value[2]=0xFF;
   pBackgroundColorChar->setValue(init_value, 3);
+
+  pBackgroundStrChar->setCallbacks(new BackgroundStrCB());
   
   pService->start();
 
